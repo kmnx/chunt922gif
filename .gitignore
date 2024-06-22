@@ -1,0 +1,6 @@
+# Ignore directories
+gifs/*
+.venv/*
+python/*
+ogif/*
+venv/*

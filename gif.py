@@ -52,6 +52,12 @@ frame_index = 0
 elapsed_time = 0
 speed_modifier = 1.0  # Modifier for adjusting the playback speed
 
+# Assuming these variables are defined and initialized appropriately
+num_frames_to_display = 20  # Number of frames to display at once
+frame_spacing = 10  # Space between frames
+frame_positions = [-240 - i * (240 + frame_spacing) for i in range(num_frames_to_display)]  # Initial Y-positions for each frame
+
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -73,27 +79,37 @@ while running:
                 speed_modifier /= 1.1  # Decrease speed
 
     if slot_machine_effect:
-        if slot_machine_iterations < slot_machine_max_iterations:
-            # Display the first frame of the next GIF
-            frame, duration = gif_frames[gif_index][0]
+        screen.fill((0, 0, 0))  # Clear the screen
+
+        for i in range(num_frames_to_display):
+            # Calculate the index of the next frame to display
+            frame_index = (gif_index + i) % len(gif_frames)
+            frame, _ = gif_frames[frame_index][0]  # Assuming we always show the first frame of each GIF for simplicity
+
+            # Calculate the Y-position for the current frame
+            y_position = frame_positions[i]
+
+            # Display the frame at its current position
             scaled_frame = pygame.transform.scale(pil_image_to_surface(frame), (320, 240))
-            screen.fill((0, 0, 0))
-            screen.blit(scaled_frame, (0, 0))
-            pygame.display.flip()
+            screen.blit(scaled_frame, (0, y_position))
 
-            # Increment the GIF index for the next iteration within the effect
-            gif_index = (gif_index + 1) % len(gif_frames)
+            # Update the Y-position for the next iteration
+            frame_positions[i] += 5  # Adjust this value to control the speed of the scrolling
 
-            # Increment and check the iteration counter
+            # Reset the position of the frame if it moves out of the visible area
+            if y_position >= 240 + (num_frames_to_display - 1) * (240 + frame_spacing):
+                frame_positions[i] = -240 - frame_spacing
+
+        pygame.display.flip()
+
+        # Check if the last frame has moved out of the visible area before incrementing slot_machine_iterations
+        if frame_positions[-1] >= 240:
             slot_machine_iterations += 1
-
-            # Control the speed of iteration
-            pygame.time.wait(int(slot_machine_speed * 1000))
-            slot_machine_speed = min(slot_machine_speed * slot_machine_acceleration, slot_machine_max_speed)
-        else:
-            slot_machine_effect = False  # Stop the slot machine effect
-            frame_index = 0
-            elapsed_time = 0
+            if slot_machine_iterations >= slot_machine_max_iterations:
+                slot_machine_effect = False
+                # Reset positions and other necessary variables
+                frame_positions = [-240 - i * (240 + frame_spacing) for i in range(num_frames_to_display)]
+                # Other reset logic here
     else:
         # Normal GIF display logic
         frame, duration = gif_frames[gif_index][frame_index]

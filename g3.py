@@ -40,7 +40,9 @@ gif_frames = [load_gif_frames(os.path.join(gif_dir, gif)) for gif in gif_files]
 # Variables for slot machine effect
 slot_machine_effect = False
 slot_machine_speed = 0.9  # Initial speed (in seconds)
-slot_machine_max_iterations = 10  # Maximum iterations before stopping
+slot_machine_iterations = 0
+
+slot_machine_max_iterations = 20  # Maximum iterations before stopping
 
 # Main loop variables
 running = True
@@ -80,6 +82,7 @@ while running:
                 speed_modifier /= 1.1
 
     if slot_machine_effect:
+        current_speed = max(1, 10 - slot_machine_iterations)
         if 'random_gif_indices' not in globals() or len(random_gif_indices) != 20:
             # Select 20 unique random indices from gif_frames
             random_gif_indices = random.sample(range(len(gif_frames)), 20)
@@ -92,28 +95,29 @@ while running:
         y_position = frame_positions[0]
         scaled_frame = pygame.transform.scale(pil_image_to_surface(frame), (320, 240))
         screen.blit(scaled_frame, (0, y_position))
-        frame_positions[0] += 5  # Update Y-position
+        frame_positions[0] += 20  # Update Y-position
         if y_position >= 240:
-            frame_positions[0] = -240 - frame_spacing
+            frame_positions[0] = -240 
             # Move to the next GIF after the current one moves off-screen
             current_gif_index += 1
-            if current_gif_index >= 20:  # Reset if we've displayed all 20 GIFs
-                current_gif_index = 0
+            #if current_gif_index >= 20:  # Reset if we've displayed all 20 GIFs
+            #    current_gif_index = 0
 
         pygame.display.flip()
-        if frame_positions[0] == -240 - frame_spacing:
+        if frame_positions[0] == 0:
             slot_machine_iterations += 1
             if slot_machine_iterations >= slot_machine_max_iterations:
                 slot_machine_effect = False
                 frame_positions = [-240 - frame_spacing]  # Reset frame position
                 # Set gif_index to the last index from random_gif_indices to continue displaying the last GIF
                 gif_index = random_gif_indices[current_gif_index % 20]
-                last_frame_index = gif_index  # Assuming gif_index is the frame index
+                last_frame_index = gif_index
+                frame_index = 0  # Assuming gif_index is the frame index
                 last_frame_duration = gif_frames[gif_index][1]                 
                 del random_gif_indices
     else:
         # Normal GIF display logic
-        frame, duration = gif_frames[last_frame_index][frame_index]
+        frame, duration = gif_frames[gif_index][frame_index]
         scaled_frame = pygame.transform.scale(pil_image_to_surface(frame), (320, 240))
         screen.fill((0, 0, 0))
         screen.blit(scaled_frame, (0, 0))

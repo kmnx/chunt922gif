@@ -4,6 +4,25 @@ import os
 from PIL import Image
 import random
 
+gif_dir = 'gifs'
+gif_paths = [os.path.join(gif_dir, f) for f in os.listdir(gif_dir) if f.endswith('.gif')]
+
+# Function to load the first frame of a GIF
+def load_first_frame(gif_path):
+    with Image.open(gif_path) as image:
+        frame = image.copy().convert('RGBA')
+        duration = image.info.get('duration', 100)  # Default duration if not specified
+    return frame, duration
+
+def load_all_first_frames(gif_paths):
+    first_frames = []
+    for gif in gif_paths:
+        with Image.open(gif) as image:
+            frame = image.copy().convert('RGBA')
+            duration = image.info.get('duration', 100)
+            first_frames.append((frame, duration))
+    return first_frames
+
 # Function to load GIF frames
 def load_gif_frames(gif_path, default_duration=100):
     image = Image.open(gif_path)
@@ -33,9 +52,10 @@ screen = pygame.display.set_mode((320, 240))
 pygame.display.set_caption('GIF Sequence Display')
 
 # Load GIFs from the 'gifs' directory
-gif_dir = 'gifs'
-gif_files = [f for f in os.listdir(gif_dir) if f.endswith('.gif')]
-gif_frames = [load_gif_frames(os.path.join(gif_dir, gif)) for gif in gif_files]
+#gif_dir = 'gifs'
+#gif_files = [f for f in os.listdir(gif_dir) if f.endswith('.gif')]
+#gif_frames = [load_gif_frames(os.path.join(gif_dir, gif)) for gif in gif_files]
+all_first_frames = load_all_first_frames(gif_paths)
 
 # Variables for slot machine effect
 slot_machine_effect = False
@@ -85,13 +105,13 @@ while running:
         current_speed = max(1, 10 - slot_machine_iterations)
         if 'random_gif_indices' not in globals() or len(random_gif_indices) != 20:
             # Select 20 unique random indices from gif_frames
-            random_gif_indices = random.sample(range(len(gif_frames)), 20)
+            random_gif_indices = random.sample(range(len(all_first_frames)), 20)
             current_gif_index = 0  # Initialize a counter to keep track of the current GIF being displayed
 
         screen.fill((0, 0, 0))  # Clear the screen
         # Use the current index for the slot machine effect
         frame_index = random_gif_indices[current_gif_index % 20]
-        frame, _ = gif_frames[frame_index][0]
+        frame, _ = all_first_frames[frame_index]
         y_position = frame_positions[0]
         scaled_frame = pygame.transform.scale(pil_image_to_surface(frame), (320, 240))
         screen.blit(scaled_frame, (0, y_position))
@@ -111,20 +131,21 @@ while running:
                 frame_positions = [-240 - frame_spacing]  # Reset frame position
                 # Set gif_index to the last index from random_gif_indices to continue displaying the last GIF
                 gif_index = random_gif_indices[current_gif_index % 20]
-                last_frame_index = gif_index
+                #last_frame_index = gif_index
                 frame_index = 0  # Assuming gif_index is the frame index
-                last_frame_duration = gif_frames[gif_index][1]                 
+                #last_frame_duration = gif_frames[gif_index][1]                 
                 del random_gif_indices
     else:
         # Normal GIF display logic
-        frame, duration = gif_frames[gif_index][frame_index]
+        gif_all_frames = load_gif_frames(gif_paths[gif_index])
+        frame, duration = gif_all_frames[frame_index]
         scaled_frame = pygame.transform.scale(pil_image_to_surface(frame), (320, 240))
         screen.fill((0, 0, 0))
         screen.blit(scaled_frame, (0, 0))
         pygame.display.flip()
         elapsed_time += clock.get_time()
         if elapsed_time >= duration / speed_modifier:
-            frame_index = (frame_index + 1) % len(gif_frames[gif_index])
+            frame_index = (frame_index + 1) % len(gif_all_frames)
             elapsed_time = 0
 
     clock.tick(60)

@@ -4,3 +4,4 @@ gifs/*
 python/*
 ogif/*
 venv/*
+__pycache__/*
